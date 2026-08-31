@@ -20,7 +20,33 @@ Being built in phases. Right now the repo contains:
 Not built yet: OAuth login, the Railway client, the API routes, and the UI. `npm run dev`
 currently serves the Next.js starter page.
 
-I would rather this README said what exists than described a finished app.
+## Why I built this
+
+I started out just curious. The more I read about what Railway does and publishes, the
+more I wanted to understand it properly.
+
+Most of my work so far has been solving business problems with technology. Not purely
+technical problems, and not inventing new ways to solve a technical issue. Seeing that
+kind of work up close surprised me. I am early in my career, so this feels like the right
+time to go and explore it, and the way to understand what they build is to build
+something against it.
+
+## What I knew going in
+
+Worth being straight about, because it shaped how the code is organised.
+
+- **GraphQL** — first time. I had never used it before this project. That is why I am
+  keeping it behind one client boundary instead of letting queries spread through the app.
+- **OAuth** — I have set up Google and Microsoft OAuth before, on a careers page at eTeam
+  that is live now, but I did that with a friend's help. This is the first time I am
+  working through the flow myself.
+- **Next.js** — my understanding is that it is a heavier frontend framework than most,
+  with rich frontend features and server-side rendering. I am learning it as I go here.
+
+I am stronger on the product side than the infrastructure side. I have done a lot of
+working out what a customer actually wants, gathering requirements, and building
+solutions to fit. How servers, networking and DNS work underneath is not something I have
+worked on, and this project is partly an attempt to close some of that gap.
 
 ## How it fits together
 
@@ -123,14 +149,3 @@ To run against Railway you will need a Railway OAuth app (Web/confidential) with
 - No service deletion in the UI, by choice.
 - `project:member` has not yet been confirmed sufficient for service creation and
   deployment against a real account.
-
-<!--
-TODO — these need your own words, not mine. I've left them out rather than invent them:
-
-1. "Why I built this" — a sentence or two on what you wanted to learn or why Railway.
-2. Your actual experience level with GraphQL, OAuth and Next.js. Spec 09 says the repo
-   must not imply professional experience you don't have. Something like "I hadn't used
-   GraphQL professionally before this, so I kept the integration small and isolated" is
-   the right shape — but only you know which technologies that applies to.
-3. Anything you'd want a reviewer to look at first.
--->
