@@ -149,6 +149,12 @@ point.
 **Why not.** It adds the entire problem of validating and trusting user-supplied images,
 for a feature the product does not need.
 
+**Finding it again.** The service is named `control-room-sandbox-<first 8 chars of the
+environment id>`. Deterministic, so we can look for an existing Sandbox before creating
+one and never end up with two; and environment-derived, so one project can hold a Sandbox
+per environment without the names colliding. There is no database to record what we
+created, so the name is the lookup key.
+
 ---
 
 ## Duplicate deployment requests

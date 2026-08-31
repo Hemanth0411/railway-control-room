@@ -15,16 +15,19 @@ Being built in phases. Right now the repo contains:
   error model — all pure TypeScript, with tests;
 - Railway OAuth: login, callback, logout, session, and token refresh
   (`/api/auth/*`, `/api/me`);
+- the Railway GraphQL client: projects, environments, Sandbox lookup and creation,
+  deploy/restart/stop/cancel/approve, deployment reads, and logs;
 - a verified record of every Railway API operation the app will use
   (`docs/railway-schema-verification.md`);
 - the decisions behind the design (`docs/decisions.md`).
 
-Not built yet: the Railway GraphQL client, the Sandbox and deployment endpoints, and the
-UI. `npm run dev` still serves the Next.js starter page.
+Not built yet: the API routes that expose all this to the browser, and the UI.
+`npm run dev` still serves the Next.js starter page.
 
-The OAuth code has not been run against a real Railway OAuth app yet, so treat it as
-written-and-unit-tested rather than working. Discovery and authorization-URL construction
-are verified against Railway's live endpoints; the token exchange is not.
+None of this has been run against a real Railway account yet, so treat it as
+written-and-unit-tested rather than working. What *is* verified against live Railway:
+the GraphQL schema every query is written against, OIDC discovery, and
+authorization-URL construction. What isn't: the token exchange, and any actual mutation.
 
 ## Why I built this
 
