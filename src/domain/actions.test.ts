@@ -41,8 +41,7 @@ describe('evaluateActions — deploy', () => {
   })
 
   it('is rejected while a deployment is already provisioning', () => {
-    // The double-click case from spec 04: the second request must not create a
-    // second deployment.
+    // The double-click case: the second request must not create a second deployment.
     for (const raw of ['INITIALIZING', 'QUEUED', 'BUILDING', 'DEPLOYING']) {
       const verdict = evaluateActions(observed(raw)).DEPLOY
       expect(verdict.allowed).toBe(false)
@@ -61,7 +60,7 @@ describe('evaluateActions — deploy', () => {
   it('is rejected when the Railway state is not recognised', () => {
     const verdict = evaluateActions(observed('SOME_FUTURE_STATUS')).DEPLOY
     expect(verdict.allowed).toBe(false)
-    expect(verdict.reason).toMatch(/not recognised/i)
+    expect(verdict.reason).toMatch(/don't recognise/i)
   })
 })
 
@@ -88,7 +87,7 @@ describe('evaluateActions — stop', () => {
     }
   })
 
-  it('says so when the deployment is already stopping, rather than repeating the generic reason', () => {
+  it('says the deployment is already stopping', () => {
     const verdict = evaluateActions(observed('REMOVING')).STOP
     expect(verdict.allowed).toBe(false)
     expect(verdict.reason).toMatch(/already stopping/i)
@@ -103,8 +102,7 @@ describe('evaluateActions — cancel', () => {
   })
 
   it('is rejected once the build is over and the deployment is being released', () => {
-    // Railway documents deploymentCancel as covering building/queued only, so
-    // DEPLOYING must not offer it even though it is still PROVISIONING.
+    // Railway only cancels queued/building, so DEPLOYING must not offer it.
     const verdict = evaluateActions(observed('DEPLOYING')).CANCEL
     expect(verdict.allowed).toBe(false)
     expect(verdict.reason).toMatch(/finished building/i)

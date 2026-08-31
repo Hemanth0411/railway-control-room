@@ -9,9 +9,9 @@ so every signature below was read from the live schema. To re-verify a single ty
       -H 'Content-Type: application/json' \
       -d '{"query":"{ __type(name:\"ServiceCreateInput\"){ inputFields { name } } }"}'
 
-This document exists because spec `03-railway-api.md` requires a research checkpoint before
-the Railway client is written. Where the live schema disagreed with the spec, the live schema
-won, and the deviation is recorded under "Deviations from the spec".
+This is here so the Railway integration is written against what the API actually is, not
+against snippets. Where the live schema disagreed with my assumptions, the live schema won;
+those three cases are at the bottom.
 
 ## Operations this application depends on
 
@@ -55,12 +55,11 @@ won, and the deviation is recorded under "Deviations from the spec".
 | Cancel | `deploymentCancel(id: String!): Boolean!` | For queued/building. |
 | Approve | `deploymentApprove(id: String!): Boolean!` | Pairs with `NEEDS_APPROVAL`. |
 
-**Deliberately not used.** `serviceInstanceDeploy` (v1) returns `Boolean!` and yields no
-deployment ID, which would force a race-prone "find the newest deployment" workaround —
-exactly what spec 02 forbids. `serviceInstanceRedeploy` likewise returns `Boolean!`.
-`deploymentRedeploy(id, usePreviousImageTag): Deployment!` returns a full object but redeploys
-an *existing* deployment rather than deploying the service from its configured source.
-`serviceDelete` and `deploymentRemove` are destructive and are out of scope per spec 01.
+**Not used, and why.** `serviceInstanceDeploy` (v1) and `serviceInstanceRedeploy` both return
+`Boolean!`, so there is no deployment ID to correlate with — you would have to guess which
+deployment was yours. `deploymentRedeploy` returns a full object but redeploys an *existing*
+deployment rather than deploying the service from its source. `serviceDelete` and
+`deploymentRemove` are destructive and out of scope.
 
 ### Deployment observation
 
@@ -122,12 +121,11 @@ Scopes advertised by discovery: `openid`, `email`, `profile`, `offline_access`,
 
 This application requests `openid email profile offline_access project:member`.
 
-`project:member` is chosen because Railway documents OAuth scopes as mapping to project member
-roles — the token can do what a project Member could do in the dashboard, which covers creating
-a service and deploying it. **Railway publishes no per-mutation scope table.** That
-`project:member` suffices for `serviceCreate` and `serviceInstanceDeployV2` is therefore an
-inference from the role mapping, confirmed only by the manual smoke test. If it proves
-insufficient, the fallback is `project:admin`.
+`project:member` because Railway maps OAuth scopes to project member roles: the token can do
+what a project Member could do in the dashboard, which covers creating and deploying a service.
+
+Railway publishes no per-mutation scope table, so this is an inference from the role mapping,
+not something documented. It is only confirmed by running it. Fallback is `project:admin`.
 
 ## Rate limits
 
@@ -164,13 +162,10 @@ action. It is modelled as its own domain state.
 
 ### 3. The Free-plan rate limit does not fit the spec's polling schedule
 
-Spec `04-state-and-async.md` recommends observations at ~1s, ~2s, ~3s, then ~5s. Against the
-Free plan's 100 requests/hour, watching a single three-minute deployment at that cadence costs
-roughly 36 requests before any log fetching — so about two observed deployments would exhaust
-the account's entire hourly API budget, including the requests needed to render the page at all.
+The planned schedule was ~1s, ~2s, ~3s, then ~5s. On the Free plan's 100 requests/hour,
+watching one three-minute deployment at that rate costs about 36 requests before any logs.
+Two deployments would use up the hour, including the requests needed to load the page.
 
-The schedule therefore keeps the spec's shape but is **rate-aware and budget-aware**: every
-Railway response's `X-RateLimit-Remaining` is read, the polling interval widens as the remaining
-budget falls, polling stops at terminal states, and the remaining budget is surfaced in the UI.
-All timing constants live in one module so the schedule can be retuned in one place, as spec 04
-requires. This is a deviation in the numbers, not in the design.
+So the schedule keeps that shape but reads `X-RateLimit-Remaining` from every response and
+widens the interval as the budget drops. Polling also stops at terminal states. The numbers
+changed; the design didn't. Constants are all in `src/domain/polling.ts`.

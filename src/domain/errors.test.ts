@@ -60,9 +60,9 @@ describe('state certainty', () => {
   it('admits the state is unknown when Railway could not be reached mid-command', () => {
     const error = errors.railwayUnavailable(new Error('ECONNRESET'))
     expect(error.certainty).toBe('unknown')
-    // Spec 05: never claim the deployment failed when we only failed to reach Railway.
+    // Never claim the deployment failed when all we know is that we couldn't reach Railway.
     expect(error.message).not.toMatch(/deployment failed/i)
-    expect(error.message).toMatch(/do not know whether/i)
+    expect(error.message).toMatch(/may or may not/i)
   })
 
   it('says the command was not sent when we know it was not', () => {

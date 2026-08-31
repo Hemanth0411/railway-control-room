@@ -1,36 +1,136 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Railway Control Room
 
-## Getting Started
+A small web app for creating one Sandbox service on Railway, deploying it, and watching
+what actually happens to it — build, deploy, running, failed, crashed — with the logs and
+the controls that match the state Railway reports.
 
-First, run the development server:
+It is deliberately small. Railway owns the infrastructure. This app owns the session, the
+user's intent, and an honest picture of what Railway is doing.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Status
+
+Being built in phases. Right now the repo contains:
+
+- the domain layer: status normalization, action rules, the polling schedule, and the
+  error model — all pure TypeScript, with tests;
+- a verified record of every Railway API operation the app will use
+  (`docs/railway-schema-verification.md`);
+- the decisions behind the design (`docs/decisions.md`).
+
+Not built yet: OAuth login, the Railway client, the API routes, and the UI. `npm run dev`
+currently serves the Next.js starter page.
+
+I would rather this README said what exists than described a finished app.
+
+## How it fits together
+
+```
+Browser
+  → Next.js route handlers (session, validation, action rules)
+    → Railway client (typed, server-side only)
+      → Railway GraphQL API
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The browser never talks to Railway and never sees a Railway token. Everything goes
+through our own endpoints.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Layers
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/domain/` — pure logic. No Railway, no Next, no React. This is where status
+  normalization, action eligibility, the polling schedule and error categories live, and
+  it is the part with real test coverage.
+- `src/app/` — Next.js routes and UI (not written yet).
 
-## Learn More
+## The part that matters: async state
 
-To learn more about Next.js, take a look at the following resources:
+A deploy mutation returning successfully does not mean the Sandbox is running. It means
+Railway accepted the command.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+So the flow is:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Deploy with `serviceInstanceDeployV2`, which returns a deployment ID.
+2. Use that ID to read the deployment's status.
+3. Keep reading until it settles.
 
-## Deploy on Vercel
+Railway reports 13 different statuses. The app maps them onto a smaller set
+(`PROVISIONING`, `RUNNING`, `FAILED`, `CRASHED`, `STOPPED`, and a few more) and always
+shows the raw Railway status too. Anything it doesn't recognise becomes `UNKNOWN` rather
+than being guessed at — Railway can add statuses whenever it likes.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Polling stops when the deployment settles, after 15 minutes, or when the Railway request
+budget gets low. See `docs/decisions.md` for why the budget matters on Railway's Free plan.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Duplicate actions
+
+Before any command, the server reads the current state from Railway and checks whether
+the action is valid. A second Deploy while one is already building is rejected, not sent.
+
+This is conflict prevention, not exactly-once execution. Two requests can read the same
+state and both get through. Railway has no idempotency key for these mutations, so that
+gap can't be closed from this side.
+
+## Railway API
+
+Every operation was checked against Railway's live GraphQL schema before being used.
+Introspection works without a token, so it is easy to re-verify:
+
+```bash
+curl -s -X POST https://backboard.railway.com/graphql/v2 \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"{ __type(name:\"ServiceCreateInput\"){ inputFields { name } } }"}'
+```
+
+`docs/railway-schema-verification.md` lists every operation with its real signature, the
+deprecated fields being avoided, and three places where the live API differs from what I
+had assumed.
+
+## Security
+
+- Railway OAuth (authorization code + OIDC, PKCE, `state`), confidential client.
+- Client secret and tokens stay server-side, in an encrypted httpOnly cookie session.
+- Scopes: `openid email profile offline_access project:member` — the user picks which
+  projects the app can see on Railway's consent screen.
+- Error responses carry a category and a message, never the upstream payload. There is a
+  test asserting a token placed in an error's diagnostic field cannot appear in the
+  serialised response.
+
+## Trade-offs
+
+No database, no queue, no worker, no WebSocket. Polling instead of subscriptions. One
+fixed Sandbox image. One Sandbox per project/environment. Reasons for each are in
+`docs/decisions.md`.
+
+## Local development
+
+```bash
+npm install
+npm test          # unit tests
+npm run typecheck
+npm run lint
+npm run dev       # starter page for now
+```
+
+To run against Railway you will need a Railway OAuth app (Web/confidential) with
+`http://localhost:3000/api/auth/callback` registered as a redirect URI. Copy
+`.env.example` to `.env.local` and fill it in.
+
+## Known limitations
+
+- Sessions are cookie-only. Losing the cookie means signing in again.
+- State is read from Railway on demand, so the UI is only as fresh as the last poll.
+- Railway's Free plan allows 100 API requests an hour, which limits how much watching the
+  app can do. It backs off rather than failing, but it is a real ceiling.
+- No service deletion in the UI, by choice.
+- `project:member` has not yet been confirmed sufficient for service creation and
+  deployment against a real account.
+
+<!--
+TODO — these need your own words, not mine. I've left them out rather than invent them:
+
+1. "Why I built this" — a sentence or two on what you wanted to learn or why Railway.
+2. Your actual experience level with GraphQL, OAuth and Next.js. Spec 09 says the repo
+   must not imply professional experience you don't have. Something like "I hadn't used
+   GraphQL professionally before this, so I kept the integration small and isolated" is
+   the right shape — but only you know which technologies that applies to.
+3. Anything you'd want a reviewer to look at first.
+-->

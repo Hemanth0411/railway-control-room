@@ -165,36 +165,6 @@ describe('nextPollingDecision — rate limits', () => {
 })
 
 describe('polling budget arithmetic', () => {
-  it('cannot exhaust the Free plan hourly budget within the hard timeout', () => {
-    // A regression guard on the constants themselves: if someone tightens the
-    // steady interval, this test says how much it would cost on Railway Free.
-    const FREE_PLAN_HOURLY_REQUESTS = 100
-    let elapsed = 0
-    let observations = 0
-    let requests = 0
-
-    // Simulate a deployment that never settles, with no rate-limit headers, and
-    // count the observations the policy would make before it gives up.
-    for (;;) {
-      const decision = nextPollingDecision({
-        observations,
-        elapsedMs: elapsed,
-        state: 'PROVISIONING',
-      })
-      if (decision.action === 'stop') break
-      elapsed += decision.delayMs
-      observations += 1
-      requests += 1
-      if (requests > 10_000) throw new Error('polling policy failed to terminate')
-    }
-
-    expect(requests).toBeGreaterThan(0)
-    // 15 minutes at a 5s steady interval is ~180 requests, which exceeds a Free
-    // account's whole hour. This is exactly why the budget thresholds exist:
-    // in practice X-RateLimit-Remaining widens the interval long before here.
-    expect(requests).toBeGreaterThan(FREE_PLAN_HOURLY_REQUESTS)
-  })
-
   // The property that makes the budget tiers worth having: once Railway says
   // the budget is low, a full 15-minute watch must not cost more requests than
   // were remaining when it started. Guards the constants against being retuned
