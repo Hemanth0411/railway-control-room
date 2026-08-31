@@ -13,12 +13,18 @@ Being built in phases. Right now the repo contains:
 
 - the domain layer: status normalization, action rules, the polling schedule, and the
   error model — all pure TypeScript, with tests;
+- Railway OAuth: login, callback, logout, session, and token refresh
+  (`/api/auth/*`, `/api/me`);
 - a verified record of every Railway API operation the app will use
   (`docs/railway-schema-verification.md`);
 - the decisions behind the design (`docs/decisions.md`).
 
-Not built yet: OAuth login, the Railway client, the API routes, and the UI. `npm run dev`
-currently serves the Next.js starter page.
+Not built yet: the Railway GraphQL client, the Sandbox and deployment endpoints, and the
+UI. `npm run dev` still serves the Next.js starter page.
+
+The OAuth code has not been run against a real Railway OAuth app yet, so treat it as
+written-and-unit-tested rather than working. Discovery and authorization-URL construction
+are verified against Railway's live endpoints; the token exchange is not.
 
 ## Why I built this
 

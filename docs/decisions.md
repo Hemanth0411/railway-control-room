@@ -186,3 +186,45 @@ idempotency key for these mutations, so that window cannot be closed from here.
 - work while Railway is down, beyond reporting that it is;
 - survive a lost session — if the cookie goes, the user signs in again and re-reads state
   from Railway.
+
+---
+
+## Tokens live in an encrypted cookie, not a server-side store
+
+**Decision.** The Railway access and refresh tokens are kept in an encrypted, httpOnly
+session cookie (`iron-session`). A second short-lived cookie holds the PKCE verifier and
+`state` between the redirect to Railway and the callback.
+
+**Why.** With no database, the cookie is the only place to put them. Encrypted and
+httpOnly means browser JavaScript cannot read them and the browser cannot tamper with
+them. Two cookies rather than one so that starting a new login does not disturb an
+existing session, and so the transaction cookie can be destroyed the moment the callback
+consumes it - which is also what stops an authorization code being replayed against it.
+
+**Alternatives.** A server-side session store in Redis or Postgres, holding a session ID
+in the cookie.
+
+**Why not.** That is a database, and the whole point of the design is not having one. It
+would also mean the app could no longer restart or scale without losing sessions unless
+the store were shared.
+
+**Known limit.** Cookies cap at about 4KB. We store the access token, refresh token, an
+expiry timestamp and three identity fields, and deliberately discard the ID token once it
+has been validated. If Railway's tokens turn out to be large enough to exceed the cap,
+this has to be revisited - that is the first thing to check during the smoke test.
+
+---
+
+## Refreshing happens in one place
+
+**Decision.** `requireAccessToken()` is the only way server code gets a token. It
+refreshes when the token is within 60 seconds of expiry, and destroys the session if the
+refresh fails.
+
+**Why.** Railway access tokens last an hour, so any session open longer than that will
+have a stale one. Doing the check at the single point of use means no caller has to think
+about expiry, and there is one place where a dead refresh token turns into
+"sign in again" rather than a confusing 401 from Railway.
+
+The 60-second margin exists so a token that passes the check does not expire midway
+through the request that just checked it.
