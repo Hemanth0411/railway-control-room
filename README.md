@@ -17,12 +17,15 @@ Being built in phases. Right now the repo contains:
   (`/api/auth/*`, `/api/me`);
 - the Railway GraphQL client: projects, environments, Sandbox lookup and creation,
   deploy/restart/stop/cancel/approve, deployment reads, and logs;
+- the API routes the browser will talk to (`/api/projects`, `/api/environments`,
+  `/api/sandbox`, `/api/sandbox/action`, `/api/deployments/...`), including the
+  server-side conflict check that rejects a duplicate deploy;
 - a verified record of every Railway API operation the app will use
   (`docs/railway-schema-verification.md`);
 - the decisions behind the design (`docs/decisions.md`).
 
-Not built yet: the API routes that expose all this to the browser, and the UI.
-`npm run dev` still serves the Next.js starter page.
+Not built yet: the UI. `npm run dev` still serves the Next.js starter page, so
+everything above is reachable only by calling the endpoints directly.
 
 None of this has been run against a real Railway account yet, so treat it as
 written-and-unit-tested rather than working. What *is* verified against live Railway:
