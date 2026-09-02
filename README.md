@@ -17,20 +17,23 @@ Being built in phases. Right now the repo contains:
   (`/api/auth/*`, `/api/me`);
 - the Railway GraphQL client: projects, environments, Sandbox lookup and creation,
   deploy/restart/stop/cancel/approve, deployment reads, and logs;
-- the API routes the browser will talk to (`/api/projects`, `/api/environments`,
-  `/api/sandbox`, `/api/sandbox/action`, `/api/deployments/...`), including the
-  server-side conflict check that rejects a duplicate deploy;
+- the API routes (`/api/projects`, `/api/environments`, `/api/sandbox`,
+  `/api/sandbox/action`, `/api/deployments/...`), including the server-side conflict
+  check that rejects a duplicate deploy;
+- the UI: sign-in page, project and environment pickers, Sandbox status with a
+  deployment timeline, the action buttons, build and runtime logs, and history;
 - a verified record of every Railway API operation the app will use
   (`docs/railway-schema-verification.md`);
 - the decisions behind the design (`docs/decisions.md`).
 
-Not built yet: the UI. `npm run dev` still serves the Next.js starter page, so
-everything above is reachable only by calling the endpoints directly.
+What has actually been run: the app boots, the sign-in page renders, `/api/auth/login`
+does live OIDC discovery against Railway and redirects with a real PKCE challenge, and an
+unauthenticated API call returns a proper 401 instead of crashing. A replayed callback
+with no transaction cookie is rejected.
 
-None of this has been run against a real Railway account yet, so treat it as
-written-and-unit-tested rather than working. What *is* verified against live Railway:
-the GraphQL schema every query is written against, OIDC discovery, and
-authorization-URL construction. What isn't: the token exchange, and any actual mutation.
+What has *not* been run: signing in with a real Railway OAuth app, and therefore every
+mutation. Creating a Sandbox and deploying it are written and unit tested against a
+mocked Railway, but no real service has been created. Treat those as unverified.
 
 ## Why I built this
 
@@ -77,7 +80,9 @@ through our own endpoints.
 - `src/domain/` — pure logic. No Railway, no Next, no React. This is where status
   normalization, action eligibility, the polling schedule and error categories live, and
   it is the part with real test coverage.
-- `src/app/` — Next.js routes and UI (not written yet).
+- `src/railway/` — the only code that speaks GraphQL to Railway.
+- `src/api/` — what the routes do, kept testable without a Next request.
+- `src/app/` — Next.js routes and the UI.
 
 ## The part that matters: async state
 
