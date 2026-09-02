@@ -148,6 +148,13 @@ point.
 **Why not.** It adds the entire problem of validating and trusting user-supplied images,
 for a feature the product does not need.
 
+**What the image is.** A ~70-line Node HTTP server in `./sandbox`, no dependencies, so it
+starts in well under a second. It serves `/health` and a `/crash` route that exits 1 on
+request. The crash route exists because otherwise the CRASHED path could only ever be
+tested against mocks - there would be no way to make a real deployment fail on demand.
+FAILED still cannot be produced this way, since that is a build or pull failure; the way to
+trigger it is to point `SANDBOX_IMAGE` at a tag that does not exist.
+
 **Creating it starts it.** Verified on Railway 2026-09-02: `serviceCreate` with an image
 source deploys immediately, without us asking. So "create a Sandbox" and "deploy a Sandbox"
 are not as separable as the API's shape suggests. We do not send a deploy after creating,
