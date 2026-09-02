@@ -1,0 +1,39 @@
+# Builds the Sandbox image and pushes it to GHCR.
+#
+# Runs here rather than locally so publishing needs no Docker install and no long-lived
+# registry credentials - GITHUB_TOKEN is scoped to this repo and expires with the job.
+name: Sandbox image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sandbox/**'
+      - '.github/workflows/sandbox-image.yml'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./sandbox
+          push: true
+          # A moving 'latest' plus an immutable commit tag. Railway pulls latest; the sha
+          # tag is there so a specific deployment can be traced back to a commit.
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/control-room-sandbox:latest
+            ghcr.io/${{ github.repository_owner }}/control-room-sandbox:${{ github.sha }}
