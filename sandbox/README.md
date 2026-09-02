@@ -31,8 +31,8 @@ any change under `sandbox/`, or on manual dispatch. No local Docker needed.
 
 It publishes:
 
-    ghcr.io/<owner>/control-room-sandbox:latest
-    ghcr.io/<owner>/control-room-sandbox:<commit sha>
+    ghcr.io/<owner-in-lowercase>/control-room-sandbox:latest
+    ghcr.io/<owner-in-lowercase>/control-room-sandbox:<commit sha>
 
 **The package has to be public**, or Railway cannot pull it without registry credentials
 that this project deliberately does not handle. GitHub keeps package visibility separate
@@ -42,7 +42,7 @@ Change visibility → Public.
 
 Then point the Control Room at it:
 
-    SANDBOX_IMAGE=ghcr.io/<owner>/control-room-sandbox:latest
+    SANDBOX_IMAGE=ghcr.io/<owner-in-lowercase>/control-room-sandbox:latest
 
 ## Triggering each state on purpose
 
@@ -54,7 +54,7 @@ and redeploy, which crashes without needing the URL.
 
 **FAILED** — this one cannot come from the image, because FAILED is a build or pull
 failure and the image is already built. Point `SANDBOX_IMAGE` at a tag that does not
-exist, e.g. `ghcr.io/<owner>/control-room-sandbox:no-such-tag`, and create a Sandbox in a
+exist, e.g. `ghcr.io/<owner-in-lowercase>/control-room-sandbox:no-such-tag`, and create a Sandbox in a
 fresh environment. Railway fails to pull and reports FAILED.
 
 **CANCEL** — hard to reach honestly. Cancel is only valid while a deployment is queued or

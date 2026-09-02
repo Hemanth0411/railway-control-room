@@ -20,20 +20,25 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: docker/login-action@v3
+      # Docker registry paths must be lowercase, and GitHub usernames are not. Derive it
+      # rather than hard-coding, so this keeps working if the repo moves.
+      - name: Lowercase the owner
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./sandbox
           push: true
           # A moving 'latest' plus an immutable commit tag. Railway pulls latest; the sha
-          # tag is there so a specific deployment can be traced back to a commit.
+          # tag is there so a running deployment can be traced back to a commit.
           tags: |
-            ghcr.io/${{ github.repository_owner }}/control-room-sandbox:latest
-            ghcr.io/${{ github.repository_owner }}/control-room-sandbox:${{ github.sha }}
+            ghcr.io/${{ env.OWNER }}/control-room-sandbox:latest
+            ghcr.io/${{ env.OWNER }}/control-room-sandbox:${{ github.sha }}
