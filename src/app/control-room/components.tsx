@@ -107,8 +107,20 @@ export function ErrorNotice({ error, onRetry }: { error: ApiError; onRetry?: () 
       )}
       <div className="mt-2 flex items-center gap-3">
         <span className="font-mono text-xs text-muted">{error.category}</span>
-        {error.retryable && onRetry !== undefined && (
-          <Button onClick={onRetry}>Retry</Button>
+        {/*
+          A dead session cannot be retried, only replaced. Offering "Retry" here would
+          loop the user through the same failure, so this offers the one action that
+          actually resolves it.
+        */}
+        {error.category === 'UNAUTHENTICATED' ? (
+          <a
+            href="/api/auth/login"
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-[#0b0d10] hover:bg-[#8bbcff]"
+          >
+            Sign in again
+          </a>
+        ) : (
+          error.retryable && onRetry !== undefined && <Button onClick={onRetry}>Retry</Button>
         )}
       </div>
     </div>
