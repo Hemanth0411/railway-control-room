@@ -61,6 +61,20 @@ deployment was yours. `deploymentRedeploy` returns a full object but redeploys a
 deployment rather than deploying the service from its source. `serviceDelete` and
 `deploymentRemove` are destructive and out of scope.
 
+### `serviceCreate` deploys on its own
+
+**Found during the first real smoke test, 2026-09-02.** Creating a service with an image
+source starts a deployment immediately. The Control Room called `serviceCreate` and never
+called `serviceInstanceDeployV2`, yet a deployment appeared and reached SUCCESS.
+
+Railway's docs describe service creation and deployment as separate operations, and they
+are separate *operations* - but creation is not inert. Anything treating "create" as
+"nothing runs yet" is wrong.
+
+Consequence for this app: after creating a Sandbox, the status read finds a deployment
+already in flight rather than `NO_DEPLOYMENT`, and the action rules correctly refuse a
+Deploy while it is provisioning.
+
 ### Deployment observation
 
 | Operation | Live signature |
@@ -124,8 +138,9 @@ This application requests `openid email profile offline_access project:member`.
 `project:member` because Railway maps OAuth scopes to project member roles: the token can do
 what a project Member could do in the dashboard, which covers creating and deploying a service.
 
-Railway publishes no per-mutation scope table, so this is an inference from the role mapping,
-not something documented. It is only confirmed by running it. Fallback is `project:admin`.
+Railway publishes no per-mutation scope table, so this started as an inference from the role
+mapping. **Confirmed on 2026-09-02**: with `project:member` a real token listed projects and
+environments, read services, and successfully created a service. `project:admin` is not needed.
 
 ## Rate limits
 

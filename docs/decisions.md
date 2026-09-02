@@ -112,10 +112,9 @@ project on that account rather than the ones the user picked.
 user share individual projects rather than a whole workspace. `project:viewer` cannot
 create or deploy a service.
 
-**Honest caveat.** Railway does not publish a per-mutation scope table. That
-`project:member` is enough for `serviceCreate` and `serviceInstanceDeployV2` is an
-inference from the role mapping, and is only confirmed by running it. If it turns out to
-be insufficient the fallback is `project:admin`.
+**Confirmed 2026-09-02.** Railway publishes no per-mutation scope table, so this began as
+an inference from the role mapping. A real sign-in with `project:member` listed projects and
+environments, read services, and created a service. No need for `project:admin`.
 
 ---
 
@@ -148,6 +147,11 @@ point.
 
 **Why not.** It adds the entire problem of validating and trusting user-supplied images,
 for a feature the product does not need.
+
+**Creating it starts it.** Verified on Railway 2026-09-02: `serviceCreate` with an image
+source deploys immediately, without us asking. So "create a Sandbox" and "deploy a Sandbox"
+are not as separable as the API's shape suggests. We do not send a deploy after creating,
+because that would be a second, duplicate deployment.
 
 **Finding it again.** The service is named `control-room-sandbox-<first 8 chars of the
 environment id>`. Deterministic, so we can look for an existing Sandbox before creating

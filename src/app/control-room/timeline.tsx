@@ -17,20 +17,16 @@ interface Step {
 const PHASE_ORDER = ['QUEUED', 'BUILDING', 'DEPLOYING', 'SUCCESS'] as const
 const PHASE_LABELS = ['Queued', 'Building', 'Deploying', 'Running']
 
+/** Where a still-provisioning deployment sits in the sequence, or -1 if it is not on it. */
 function positionOf(rawStatus: string): number {
   switch (rawStatus) {
     case 'INITIALIZING':
     case 'QUEUED':
-    case 'NEEDS_APPROVAL':
-    case 'WAITING':
       return 0
     case 'BUILDING':
       return 1
     case 'DEPLOYING':
       return 2
-    case 'SUCCESS':
-    case 'SLEEPING':
-      return 3
     default:
       return -1
   }
@@ -55,6 +51,19 @@ function buildSteps(observation: DeploymentObservation): Step[] {
       { label: 'Failed', status: 'failed' },
     ]
   }
+
+  // A running deployment has finished the sequence. Marking the last step "current"
+  // would pulse it as though something were still happening, contradicting the green
+  // Running badge and the "this deployment has settled" line right beside it.
+  if (state === 'RUNNING') {
+    return PHASE_LABELS.map((label) => ({ label, status: 'done' as StepStatus }))
+  }
+
+  // Only a deployment actually moving through the sequence gets a position in it.
+  // Sleeping, waiting and awaiting-approval are real states but they are not steps of
+  // a build, so they fall through to the raw-status line rather than being placed on a
+  // track they do not belong to.
+  if (state !== 'PROVISIONING') return []
 
   const current = positionOf(rawStatus)
   if (current < 0) return []

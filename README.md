@@ -26,14 +26,11 @@ Being built in phases. Right now the repo contains:
   (`docs/railway-schema-verification.md`);
 - the decisions behind the design (`docs/decisions.md`).
 
-What has actually been run: the app boots, the sign-in page renders, `/api/auth/login`
-does live OIDC discovery against Railway and redirects with a real PKCE challenge, and an
-unauthenticated API call returns a proper 401 instead of crashing. A replayed callback
-with no transaction cookie is rejected.
+Smoke tested against a real Railway account on 2026-09-02: signing in with Railway works
+end to end, projects and environments load, and creating a Sandbox produced a real service
+that reached Running. `project:member` turned out to be enough for service creation.
 
-What has *not* been run: signing in with a real Railway OAuth app, and therefore every
-mutation. Creating a Sandbox and deploying it are written and unit tested against a
-mocked Railway, but no real service has been created. Treat those as unverified.
+Not yet exercised against real Railway: stop, restart, cancel, and the failure paths.
 
 ## Why I built this
 
@@ -164,5 +161,6 @@ To run against Railway you will need a Railway OAuth app (Web/confidential) with
 - Railway's Free plan allows 100 API requests an hour, which limits how much watching the
   app can do. It backs off rather than failing, but it is a real ceiling.
 - No service deletion in the UI, by choice.
-- `project:member` has not yet been confirmed sufficient for service creation and
-  deployment against a real account.
+- Stop, restart and cancel have not been exercised against a real deployment yet.
+- No deliberate failure case has been tested, so the FAILED and CRASHED paths are still
+  only covered by unit tests.
