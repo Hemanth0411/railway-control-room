@@ -168,10 +168,34 @@ describe('getLatestDeployment', () => {
   })
 
   it('prefers url but falls back to staticUrl', async () => {
+    // Railway sends a bare hostname, not a URL - this fixture used to carry a scheme,
+    // which is why the missing-scheme bug got past the tests and showed up in the browser
+    // as a link resolving against our own origin.
     respondWith({
-      serviceInstance: { latestDeployment: deployment({ url: null, staticUrl: 'https://s.up.railway.app' }) },
+      serviceInstance: { latestDeployment: deployment({ url: null, staticUrl: 'svc.up.railway.app' }) },
     })
-    expect((await getLatestDeployment(TOKEN, 's1', 'e1')).data?.url).toBe('https://s.up.railway.app')
+    expect((await getLatestDeployment(TOKEN, 's1', 'e1')).data?.url).toBe('https://svc.up.railway.app')
+  })
+
+  it('makes a bare hostname absolute so the browser does not treat it as a path', async () => {
+    respondWith({
+      serviceInstance: { latestDeployment: deployment({ url: 'app.up.railway.app', staticUrl: null }) },
+    })
+    expect((await getLatestDeployment(TOKEN, 's1', 'e1')).data?.url).toBe('https://app.up.railway.app')
+  })
+
+  it('leaves a URL that already has a scheme alone', async () => {
+    respondWith({
+      serviceInstance: { latestDeployment: deployment({ url: 'https://app.example.com', staticUrl: null }) },
+    })
+    expect((await getLatestDeployment(TOKEN, 's1', 'e1')).data?.url).toBe('https://app.example.com')
+  })
+
+  it('reports no url when Railway has assigned none', async () => {
+    respondWith({
+      serviceInstance: { latestDeployment: deployment({ url: null, staticUrl: null }) },
+    })
+    expect((await getLatestDeployment(TOKEN, 's1', 'e1')).data?.url).toBeNull()
   })
 })
 

@@ -93,6 +93,12 @@ Deploy while it is provisioning.
 
 `Log`: `timestamp: String!`, `message: String!`, `severity: String`, `tags`, `attributes`.
 
+**`url` and `staticUrl` are bare hostnames**, not absolute URLs - Railway returns
+`something.up.railway.app` with no scheme. Verified 2026-09-02. Anything rendering one as a
+link has to prepend `https://`, or a browser treats it as a relative path. Both are also
+null until a domain is generated for the service; Railway does not assign one to a service
+created through the API.
+
 ### `DeploymentStatus` — the complete live enum (13 values)
 
     BUILDING  CRASHED  DEPLOYING  FAILED  INITIALIZING  NEEDS_APPROVAL

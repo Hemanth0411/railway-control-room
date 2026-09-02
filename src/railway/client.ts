@@ -46,6 +46,15 @@ interface RawDeployment {
   deploymentStopped: boolean | null
 }
 
+/**
+ * Railway returns a bare hostname here, not a URL. Passed through as-is the browser reads
+ * it as a relative path and resolves it against our own origin, which 404s.
+ */
+function toAbsoluteUrl(value: string | null): string | null {
+  if (value === null || value.trim() === '') return null
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`
+}
+
 function toObservation(raw: RawDeployment): DeploymentObservation {
   return {
     deploymentId: raw.id,
@@ -55,7 +64,7 @@ function toObservation(raw: RawDeployment): DeploymentObservation {
     statusUpdatedAt: raw.statusUpdatedAt,
     // staticUrl is Railway's stable per-deployment address; url is only set once a
     // domain exists. Either is more useful to show than nothing.
-    url: raw.url ?? raw.staticUrl,
+    url: toAbsoluteUrl(raw.url ?? raw.staticUrl),
     stopped: raw.deploymentStopped === true,
     observedAt: new Date().toISOString(),
   }
