@@ -26,11 +26,13 @@ Being built in phases. Right now the repo contains:
   (`docs/railway-schema-verification.md`);
 - the decisions behind the design (`docs/decisions.md`).
 
-Smoke tested against a real Railway account on 2026-09-02: signing in with Railway works
-end to end, projects and environments load, and creating a Sandbox produced a real service
-that reached Running. `project:member` turned out to be enough for service creation.
+Smoke tested against a real Railway account on 2026-09-02. Signing in works end to end,
+projects and environments load, creating a Sandbox produced a real service that reached
+Running, and Restart and Stop both did what they say against the live container. The
+server-side conflict check refused a command with a 409 during that run, which is the
+behaviour the whole design exists for.
 
-Not yet exercised against real Railway: stop, restart, cancel, and the failure paths.
+Not yet exercised: Cancel, and the failure paths (FAILED and CRASHED).
 
 ## Why I built this
 
@@ -161,6 +163,9 @@ To run against Railway you will need a Railway OAuth app (Web/confidential) with
 - Railway's Free plan allows 100 API requests an hour, which limits how much watching the
   app can do. It backs off rather than failing, but it is a real ceiling.
 - No service deletion in the UI, by choice.
-- Stop, restart and cancel have not been exercised against a real deployment yet.
+- Cancel has not been exercised against a real deployment. It needs a build slow enough
+  to catch, and a prebuilt image deploys too fast.
 - No deliberate failure case has been tested, so the FAILED and CRASHED paths are still
   only covered by unit tests.
+- Railway marks anything a container writes to stderr as an error, so healthy services
+  can produce red log lines. The log panel explains this rather than reclassifying it.

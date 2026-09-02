@@ -131,23 +131,35 @@ export function Logs({ deploymentId }: { deploymentId: string | null }) {
         ) : current.lines === null || current.lines.length === 0 ? (
           <Empty>No {kind} logs yet. They appear once Railway produces output.</Empty>
         ) : (
-          <div
-            ref={scroller}
-            onScroll={onScroll}
-            className="max-h-80 overflow-auto rounded-md bg-background p-3 font-mono text-xs leading-relaxed"
-          >
-            {current.lines.map((line, index) => (
-              <div key={`${line.timestamp}-${index}`} className="flex gap-3">
-                <span className="shrink-0 text-muted/70">
-                  {new Date(line.timestamp).toLocaleTimeString()}
-                </span>
-                <span className={`shrink-0 uppercase ${severityClass(line.severity)}`}>
-                  {line.severity ?? 'log'}
-                </span>
-                <span className="whitespace-pre-wrap break-all">{line.message}</span>
-              </div>
-            ))}
-          </div>
+          <>
+            {current.lines.some((line) => line.severity?.toLowerCase() === 'error') && (
+              // Railway documents that anything a container writes to stderr becomes
+              // level.error. Plenty of programs, nginx included, write ordinary startup
+              // notices there, so a healthy service can look alarming. We show Railway's
+              // classification unchanged and explain it rather than second-guessing it.
+              <p className="mb-2 text-xs text-muted">
+                Railway marks anything written to stderr as an error. Programs such as nginx
+                write ordinary startup notices there, so red does not always mean a problem.
+              </p>
+            )}
+            <div
+              ref={scroller}
+              onScroll={onScroll}
+              className="max-h-80 overflow-auto rounded-md bg-background p-3 font-mono text-xs leading-relaxed"
+            >
+              {current.lines.map((line, index) => (
+                <div key={`${line.timestamp}-${index}`} className="flex gap-3">
+                  <span className="shrink-0 text-muted/70">
+                    {new Date(line.timestamp).toLocaleTimeString()}
+                  </span>
+                  <span className={`shrink-0 uppercase ${severityClass(line.severity)}`}>
+                    {line.severity ?? 'log'}
+                  </span>
+                  <span className="whitespace-pre-wrap break-all">{line.message}</span>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </section>
